@@ -1289,3 +1289,18 @@ func TestVisitFlagOrder(t *testing.T) {
 		i++
 	})
 }
+
+func TestSetShortHandSkipPrefixes(t *testing.T) {
+	f := NewFlagSet("test", ContinueOnError)
+	f.Bool("true", true, "always true")
+	err := f.Parse([]string{"--true", "-test.v", "-ginkgo.v"})
+	if err == nil {
+		t.Fatal("expected error; got no error instead")
+	}
+
+	f.SetShortHandSkipPrefixes([]string{"ginkgo."})
+	err = f.Parse([]string{"--true", "-ginkgo.v"})
+	if err != nil {
+		t.Fatal("expected no error; got ", err)
+	}
+}

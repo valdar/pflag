@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// default shorthand flags prefixes to be skipped during parsing (i.e. go test flags prefixes)
+var defaultShortHandSkipPrefixes = []string{"test."}
+
 // flagValueWrapper implements pflag.Value around a flag.Value.  The main
 // difference here is the addition of the Type method that returns a string
 // name of the type.  As this is generally unknown, we approximate that with
@@ -102,4 +105,19 @@ func (f *FlagSet) AddGoFlagSet(newSet *goflag.FlagSet) {
 		f.addedGoFlagSets = make([]*goflag.FlagSet, 0)
 	}
 	f.addedGoFlagSets = append(f.addedGoFlagSets, newSet)
+}
+
+// ParseSkippedFlags explicitly Parses FlagSet.shortHandSkipPrefixes skipped flags with goflag.Parse(),
+// since those are skipped by pflag.Parse() (by default the one prefixed by test. are skipped i.e. go test flags).
+// Typical usage example: `yourFlagSet.ParseGoTestFlags(os.Args[1:], goflag.CommandLine)`
+func (f *FlagSet) ParseSkippedFlags(osArgs []string, goFlagSet *goflag.FlagSet) error {
+	var skippedFlags []string
+	for _, flag := range osArgs {
+		for _, prefix := range f.getShortHandSkipPrefixesOrDefault() {
+			if strings.HasPrefix(flag, "-"+prefix) {
+				skippedFlags = append(skippedFlags, flag)
+			}
+		}
+	}
+	return goFlagSet.Parse(skippedFlags)
 }
